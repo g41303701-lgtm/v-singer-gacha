@@ -12,6 +12,8 @@ jobs:
     permissions:
       contents: read
       deployments: write
+    env:
+      NPM_CONFIG_LEGACY_PEER_DEPS: true
 
     steps:
       - name: Checkout repository
@@ -29,8 +31,6 @@ jobs:
       - name: Build and transform to Cloudflare Pages
         run: npx @cloudflare/next-on-pages
         env:
-          # Force legacy peer deps for internal vercel build
-          NPM_CONFIG_LEGACY_PEER_DEPS: true
           # Build-time environment variables
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}

@@ -57,29 +57,9 @@ export async function POST(request: Request) {
 
     console.log(`Successfully published entry ${target.id}.`);
 
-    // 4. ストック補充フェーズ (探索・解析の自動連動)
-    let replenishmentLog = '';
-    try {
-      console.log("🛠️ Starting automated replenishment...");
-      const { count: candidateCount } = await supabase
-        .from('vtubers')
-        .select('id', { count: 'exact', head: true })
-        .eq('is_candidate', true);
-
-      if (candidateCount === 0) {
-        console.log("🔍 No candidates found. Triggering discovery...");
-        const { runDiscovery } = await import('@/lib/discovery');
-        await runDiscovery(5);
-      }
-
-      console.log("🧠 Triggering auto-analysis for next stock...");
-      const { runAutoAnalysis } = await import('@/lib/gacha_ops');
-      const result = await runAutoAnalysis();
-      replenishmentLog = `Replenishment successful: ${result.name} (${result.status})`;
-    } catch (replenishErr: any) {
-      console.error("⚠️ Replenishment failed:", replenishErr.message);
-      replenishmentLog = `Replenishment failed: ${replenishErr.message}`;
-    }
+    // 4. ストック補充フェーズ (Cloudflare Edge非対応のためスキップ)
+    // 実際の補充は GitHub Actions (auto_replenish_stock.yml) が定期的または手動で行います
+    let replenishmentLog = 'Replenishment skipped (Requires full Node.js environment, handled by GitHub Actions).';
 
     return NextResponse.json({
       success: true,
