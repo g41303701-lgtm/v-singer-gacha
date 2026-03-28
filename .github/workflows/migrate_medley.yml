@@ -1,0 +1,35 @@
+name: Migrate Old Medley Data
+
+on:
+  workflow_dispatch:
+    # GitHubのActionsタブから手動で実行できるようにする
+
+jobs:
+  run-migration:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install System Dependencies (ffmpeg)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Install Project Dependencies
+        run: npm ci
+
+      - name: Run Auto Migration Script
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}  # (Required if imported locally, though not used here)
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}  # (Required if imported locally)
+        run: npx ts-node --compilerOptions '{"module":"CommonJS"}' scripts/migrate_medley.ts

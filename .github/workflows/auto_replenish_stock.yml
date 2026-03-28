@@ -1,0 +1,36 @@
+name: Auto Replenish Vtuber Stock
+
+on:
+  schedule:
+    # 1時間ごとに実行 (UTC 0分 = 日本時間 毎時0分)
+    - cron: '0 * * * *'
+  workflow_dispatch:
+    # GitHub上のActionsタブから手動で実行可能
+
+jobs:
+  replenish:
+    runs-on: ubuntu-latest
+    # パブリックリポジトリの場合、実行時間は無制限・無料です
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run automated worker
+        run: npx tsx scripts/automated_worker.ts
+        env:
+          # GitHubのリポジトリ設定 (Settings > Secrets and variables > Actions) で登録が必要です
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}

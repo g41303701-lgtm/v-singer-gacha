@@ -1,0 +1,18 @@
+name: Aggregate Hearts Batch
+
+on:
+  schedule:
+    # 毎時5分おきに実行
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+    # GitHub Actionタブからの手動実行も可能にする
+
+jobs:
+  aggregate-hearts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send POST request to aggregate-hearts API
+        run: |
+          curl -X POST "${{ secrets.BASE_URL }}/api/admin/aggregate-hearts" \
+          -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+          -H "Content-Type: application/json"
