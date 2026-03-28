@@ -21,42 +21,57 @@ export async function POST(request: Request) {
 
     const totalHearts = stats.total_hearts || 0;
     const lastAggregated = stats.last_aggregated_hearts || 0;
-    const diff = totalHearts - lastAggregated;
-
-    if (diff <= 0) {
-      return NextResponse.json({
-        success: true,
-        message: 'No new hearts to aggregate.',
-        diff: 0
-      });
-    }
+    const diff = Math.max(0, totalHearts - lastAggregated);
 
     // 1回 = 1秒短縮
-    const reductionSeconds = diff;
     const currentNextTime = new Date(stats.next_draw_time).getTime();
-    
-    // next_draw_time を削減秒数だけ早める
-    const newNextDrawTime = new Date(currentNextTime - reductionSeconds * 1000).toISOString();
-    // 経過記録としての総時間短縮（分）も再計算しておく（UI表示用などがあれば）
-    const totalReductionMinutes = Math.floor(totalHearts / 60);
+    const newNextDrawTime = currentNextTime - diff * 1000;
+    let published = false;
+
+    // 時間が現在時刻を過ぎている（カウントダウン0）場合は、自動公開APIをたたく
+    if (Date.now() >= newNextDrawTime) {
+      console.log('Time is up! Triggering automatic publish...');
+      const origin = new URL(request.url).origin;
+      const publishRes = await fetch(`${origin}/api/admin/publish`, {
+        method: 'POST',
+        headers: {
+          'Authorization': request.headers.get('authorization') || '',
+        }
+      });
+      
+      if (publishRes.ok) {
+        published = true;
+      } else {
+        console.error('Auto publish failed:', await publishRes.text());
+      }
+    }
 
     // 2. global_statsを更新
+    const updateData: any = {
+      last_aggregated_hearts: totalHearts,
+      time_reduction_minutes: Math.floor(totalHearts / 60)
+    };
+
+    // 公開されなかった場合のみ、短縮された時間を上書き保存する
+    // (公開された場合は publish API がすでに +24時間 をセットしているため触らない)
+    if (!published && diff > 0) {
+      updateData.next_draw_time = new Date(newNextDrawTime).toISOString();
+    }
+
     const { error: statsUpdateError } = await supabase
       .from('global_stats')
-      .update({
-        next_draw_time: newNextDrawTime,
-        last_aggregated_hearts: totalHearts,
-        time_reduction_minutes: totalReductionMinutes
-      })
+      .update(updateData)
       .eq('id', 1);
 
     if (statsUpdateError) throw statsUpdateError;
 
     return NextResponse.json({
       success: true,
-      message: `Successfully aggregated ${diff} hearts and reduced nextDrawTime by ${diff} seconds.`,
+      message: published 
+        ? `Time is up! Triggered publish for new gacha.`
+        : (diff > 0 ? `Aggregated ${diff} hearts and reduced nextDrawTime.` : 'No new hearts, time not reached yet.'),
       diff,
-      newNextDrawTime
+      published
     });
 
   } catch (error: any) {
