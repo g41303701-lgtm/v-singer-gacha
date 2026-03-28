@@ -60,3 +60,17 @@ next-env.d.ts
 # OS files
 .DS_Store
 Thumbs.db
+
+# Cloudflare
+.wrangler/
+.output/
+
+# Secrets
+*.pem
+*.key
+*.cert
+*.p12
+
+# Temporary files
+/tmp/
+/temp/
