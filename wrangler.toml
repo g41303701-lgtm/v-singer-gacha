@@ -1,0 +1,7 @@
+name = "v-singer-gacha"
+compatibility_date = "2024-04-03" # 2024-04-03以降でnodejs_compatが利用可能
+compatibility_flags = ["nodejs_compat"]
+
+[pages_build_config]
+build_command = "npm run build"
+destination_dir = ".vercel/output/static"

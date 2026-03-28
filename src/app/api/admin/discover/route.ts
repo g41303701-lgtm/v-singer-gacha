@@ -3,6 +3,7 @@ import { runDiscovery } from '@/lib/discovery';
 import { verifyAdminAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
 export const maxDuration = 60;
 
 export async function POST(request: Request) {

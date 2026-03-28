@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { mapVtuberRow } from '@/lib/mappers';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
 
 export async function GET(
   request: Request,

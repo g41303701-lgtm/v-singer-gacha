@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 
 // 実際はキャッシュさせず、POSTリクエストのたびに確実にデクリメント・データベース更新を行います
 export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
 
 export async function POST(request: Request) {
   try {

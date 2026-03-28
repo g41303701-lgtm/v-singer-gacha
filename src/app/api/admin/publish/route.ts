@@ -3,6 +3,8 @@ import { supabase } from '@/lib/supabase';
 import { verifyAdminAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
+export const maxDuration = 60;
 
 /**
  * 待機中の解析結果 (is_published = false) を1件取り出し、公開状態にする。

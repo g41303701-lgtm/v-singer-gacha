@@ -4,6 +4,7 @@ import { verifyAdminAuth } from '@/lib/auth';
 
 // 開発用・CRONジョブ用エンドポイント (現在は手動呼び出し推奨)
 export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
 export const maxDuration = 60;
 
 export async function POST(request: Request) {
