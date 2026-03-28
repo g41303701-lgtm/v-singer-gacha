@@ -3,7 +3,6 @@ import { supabaseAdmin as supabase } from '@/lib/supabase';
 import { verifyAdminAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
-export const runtime = 'edge';
 
 export async function POST(request: Request) {
   try {

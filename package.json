@@ -6,14 +6,16 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "cf:build": "opennextjs-cloudflare build"
   },
   "dependencies": {
     "@distube/ytdl-core": "^4.16.12",
     "@supabase/supabase-js": "^2.100.0",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.7.0",
-    "next": "15.5.2",
+    "next": "16.2.1",
     "play-dl": "^1.9.7",
     "react": "19.2.4",
     "react-dom": "19.2.4",
@@ -21,14 +23,14 @@
     "youtube-dl-exec": "^3.1.4"
   },
   "devDependencies": {
-    "@cloudflare/next-on-pages": "^1.13.16",
+    "@opennextjs/cloudflare": "^1.6.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "dotenv": "^17.3.1",
     "eslint": "^9",
-    "eslint-config-next": "15.5.2",
+    "eslint-config-next": "16.2.1",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5",

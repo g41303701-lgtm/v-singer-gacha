@@ -3,7 +3,6 @@ import { supabase } from '@/lib/supabase';
 import { verifyAdminAuth } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
-export const runtime = 'edge';
 export const maxDuration = 60;
 
 /**
