@@ -71,9 +71,7 @@ export async function fetchAudioBuffer(videoId: string): Promise<Buffer> {
     const outputPath = path.join(tmpDir, `yt_${videoId}_${Date.now()}.m4a`);
 
     const args = [
-      '-f', 'bestaudio/best', // 最も品質の良いオーディオ（無ければ動画込みの最高品質）
-      '-x', '--audio-format', 'm4a', // 確実にm4aに変換して出力
-      '--extractor-args', 'youtube:player_client=ios,web', // プレイヤー偽装によってFormat制限を回避
+      '-x', '--audio-format', 'm4a', // 確実にm4aに抽出・変換して出力
       '-o', outputPath
     ];
 
