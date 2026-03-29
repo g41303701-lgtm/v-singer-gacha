@@ -24,7 +24,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg python3-pip
-          pip install yt-dlp
+          pip install -U --pre yt-dlp
 
       - name: Install Node.js dependencies
         run: npm install --legacy-peer-deps
