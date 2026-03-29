@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Share2, Mic2, Music, VolumeX } from "lucide-react";
+import { Share2, Mic2, Music, VolumeX, ExternalLink, Play } from "lucide-react";
 import TypewriterText from "@/components/TypewriterText";
 import MedleySpectrum from "@/components/MedleySpectrum";
 import type { VtuberData } from "@/types";
@@ -248,10 +248,28 @@ export default function VtuberShowcase({ vtuber, onShare, isAutoPlay = true }: V
             initial={{ opacity: 0, y: 20 }} 
             animate={{ opacity: 1, y: 0 }} 
             transition={{ delay: 0.3 }} 
-            className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-8"
+            className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4"
           >
             <span className="neon-text-blue">{vtuber.name}</span>
           </motion.h1>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="mb-8 flex justify-center lg:justify-start"
+          >
+            <a 
+              href={`https://www.youtube.com/channel/${vtuber.channelId}`} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-red-500/30 bg-red-500/10 text-sm sm:text-base text-red-400 hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-300 transition-all font-[var(--font-orbitron)] group shadow-[0_0_15px_rgba(255,0,0,0.1)] hover:shadow-[0_0_25px_rgba(255,0,0,0.25)]"
+            >
+              <Play className="w-5 h-5 group-hover:scale-110 transition-transform fill-current" />
+              <span className="font-bold tracking-wide">{t('YouTubeチャンネル', 'YouTube Channel')}</span>
+              <ExternalLink className="w-3 h-3 ml-1 opacity-70" />
+            </a>
+          </motion.div>
 
           <div className="w-full mb-8">
             <div className="flex items-center gap-2 mb-4 lg:justify-start justify-center">
