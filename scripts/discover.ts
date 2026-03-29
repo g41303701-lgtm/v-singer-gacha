@@ -11,16 +11,16 @@ async function main() {
   console.log("=========================================");
 
   try {
-    // ストック（公開待ちの候補）の数を確認する
+    // 候補（is_candidate = true）の数を確認する
     const { count: candidateCount, error: fetchError } = await supabase
-      .from('roulette_history')
+      .from('vtubers')
       .select('*', { count: 'exact', head: true })
-      .eq('is_published', false);
+      .eq('is_candidate', true);
 
     if (fetchError) throw fetchError;
 
     if (candidateCount !== null && candidateCount > 0) {
-      console.log(`✅ Sufficient stock available (${candidateCount}). Skipping discovery.`);
+      console.log(`✅ Candidates available (${candidateCount}). Skipping discovery.`);
       process.exit(0);
     }
 
