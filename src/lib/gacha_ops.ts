@@ -149,6 +149,15 @@ export async function runAutoAnalysis(): Promise<{ name: string; status: string 
 
   } catch (err: any) {
     console.error("❌ Analysis Error:", err.message);
-    return await fallbackFromArchive(`Analysis Failure for ${target.name}: ${err.message}`);
+
+    // エラーが発生したVtuberで次回以降も止まり続けないように、候補フラグを下ろす
+    await supabase.from('vtubers').update({ is_candidate: false }).eq('id', target.id);
+
+    try {
+      return await fallbackFromArchive(`Analysis Failure for ${target.name}: ${err.message}`);
+    } catch (fallbackErr: any) {
+      console.error("❌ Fallback Error:", fallbackErr.message);
+      throw new Error(`Target [${target.name}] discarded due to error: ${err.message}. And Fallback failed: ${fallbackErr.message}`);
+    }
   }
 }

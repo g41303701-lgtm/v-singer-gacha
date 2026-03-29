@@ -74,7 +74,7 @@ export async function fetchAudioBuffer(videoId: string): Promise<Buffer> {
       videoUrl
     ], {
       windowsHide: true,
-      stdio: ['ignore', 'pipe', 'ignore'], // 標準出力のみパイプで読み取る
+      stdio: ['ignore', 'pipe', 'pipe'], // 標準エラー出力も読み取る
     });
 
     if (!child.stdout) {
@@ -82,16 +82,21 @@ export async function fetchAudioBuffer(videoId: string): Promise<Buffer> {
     }
 
     const chunks: Buffer[] = [];
-    
     child.stdout.on('data', (chunk) => {
       chunks.push(Buffer.from(chunk));
+    });
+    
+    let stderrOutput = '';
+    child.stderr?.on('data', (chunk) => {
+      stderrOutput += chunk.toString();
     });
     
     child.on('close', (code) => {
       if (code === 0) {
         resolve(Buffer.concat(chunks));
       } else {
-        reject(new Error(`YouTube download process exited with code ${code} for video ${videoId}`));
+        const errMsg = stderrOutput.split('\n').filter(l => l.includes('ERROR:')).join(' ') || stderrOutput.trim();
+        reject(new Error(`Exit code ${code} for video ${videoId}. Reason: ${errMsg}`));
       }
     });
     
