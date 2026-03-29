@@ -67,9 +67,13 @@ export async function fetchAudioBuffer(videoId: string): Promise<Buffer> {
       binaryPath = 'yt-dlp';
     }
     
+    const tmpDir = os.tmpdir();
+    const outputPath = path.join(tmpDir, `yt_${videoId}_${Date.now()}.m4a`);
+
     const args = [
-      '-f', 'bestaudio[ext=m4a]/bestaudio',
-      '-o', '-'
+      '-f', 'bestaudio/best', // 最も品質の良いオーディオ（無ければ動画込みの最高品質）
+      '-x', '--audio-format', 'm4a', // 確実にm4aに変換して出力
+      '-o', outputPath
     ];
 
     if (process.env.YOUTUBE_COOKIES_PATH) {
@@ -77,32 +81,41 @@ export async function fetchAudioBuffer(videoId: string): Promise<Buffer> {
     }
     args.push(videoUrl);
 
-    // Geminiのネイティブ解析が 'audio/m4a' にのみ適切に反応するため、m4a (ACC) 形式を強制指定
+    // stdoutへのパイプではなくファイル書き出しを行い、ログのみ取得する
     const child = spawn(binaryPath, args, {
       windowsHide: true,
-      stdio: ['ignore', 'pipe', 'pipe'], // 標準エラー出力も読み取る
+      stdio: ['ignore', 'pipe', 'pipe'], 
     });
 
-    if (!child.stdout) {
-      return reject(new Error('Failed to initialize download stream for ' + videoId));
-    }
-
-    const chunks: Buffer[] = [];
-    child.stdout.on('data', (chunk) => {
-      chunks.push(Buffer.from(chunk));
-    });
-    
     let stderrOutput = '';
     child.stderr?.on('data', (chunk) => {
       stderrOutput += chunk.toString();
     });
     
+    // yt-dlp は -o でファイル指定するとエラー以外のログをstdoutに出力する
+    let stdoutLogs = '';
+    child.stdout?.on('data', (chunk) => {
+      stdoutLogs += chunk.toString();
+    });
+
     child.on('close', (code) => {
-      if (code === 0) {
-        resolve(Buffer.concat(chunks));
-      } else {
-        const errMsg = stderrOutput.split('\n').filter(l => l.includes('ERROR:')).join(' ') || stderrOutput.trim();
-        reject(new Error(`Exit code ${code} for video ${videoId}. Reason: ${errMsg}`));
+      try {
+        if (code === 0 && fs.existsSync(outputPath)) {
+          const buffer = fs.readFileSync(outputPath);
+          resolve(buffer);
+        } else {
+          // エラーメッセージの抽出
+          const errMsg = stderrOutput.split('\n').filter(l => l.includes('ERROR:')).join(' ') 
+            || stderrOutput.trim() || stdoutLogs.trim() || 'Unknown extraction error';
+          reject(new Error(`Exit code ${code} for video ${videoId}. Reason: ${errMsg}`));
+        }
+      } catch (err) {
+        reject(err);
+      } finally {
+        // 一時ファイルのクリーンアップ
+        if (fs.existsSync(outputPath)) {
+          try { fs.unlinkSync(outputPath); } catch (_) {}
+        }
       }
     });
     
