@@ -49,7 +49,8 @@ export async function GET(request: Request) {
           currentVtuber: null, 
           nextDrawTime: stats.next_draw_time,
           totalHearts: stats.total_hearts,
-          timeReductionMinutes: stats.time_reduction_minutes
+          timeReductionMinutes: stats.time_reduction_minutes,
+          serverTime: Date.now(),
         });
       }
       throw historyError;
@@ -64,6 +65,7 @@ export async function GET(request: Request) {
       nextDrawTime: stats.next_draw_time,
       totalHearts: stats.total_hearts,
       timeReductionMinutes: stats.time_reduction_minutes,
+      serverTime: Date.now(), // 端末の時計のズレを補正するためにサーバー時刻を返す
     });
   } catch (error: any) {
     console.error('Error fetching current roulette:', error);

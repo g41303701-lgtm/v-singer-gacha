@@ -26,6 +26,7 @@ export interface RouletteState {
   nextDrawTime: string; 
   totalHearts: number;
   timeReductionMinutes: number;
+  serverTime: number; // 同期用のサーバー時刻
 }
 
 export interface ArchiveEntry {

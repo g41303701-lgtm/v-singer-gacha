@@ -7,12 +7,14 @@ interface CountdownTimerProps {
   targetTime: string;
   reductionMinutes?: number;
   onFinished?: () => void;
+  serverTimeOffset?: number;
 }
 
 export default function CountdownTimer({
   targetTime,
   reductionMinutes = 0,
   onFinished,
+  serverTimeOffset = 0,
 }: CountdownTimerProps) {
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0, totalMs: 0 });
   const { t } = useSettings();
@@ -20,7 +22,7 @@ export default function CountdownTimer({
   useEffect(() => {
     const calculateTimeLeft = () => {
       const target = new Date(targetTime).getTime() - reductionMinutes * 60 * 1000;
-      const now = Date.now();
+      const now = Date.now() + serverTimeOffset;
       const diff = Math.max(0, target - now);
 
       if (diff === 0 && onFinished) {
@@ -41,7 +43,7 @@ export default function CountdownTimer({
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [targetTime, reductionMinutes]);
+  }, [targetTime, reductionMinutes, serverTimeOffset, onFinished]);
 
   const pad = (n: number) => n.toString().padStart(2, "0");
   const isFinalPhase = timeLeft.totalMs < 3 * 60 * 60 * 1000;

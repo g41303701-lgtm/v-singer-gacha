@@ -15,6 +15,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
+  const [serverTimeOffset, setServerTimeOffset] = useState<number>(0);
   const { t } = useSettings();
 
   // 初期データ取得
@@ -26,10 +27,14 @@ export default function Home() {
         if (!res.ok) throw new Error("Failed to fetch current roulette data");
         const data = await res.json();
         setRouletteState(data);
+
+        // サーバー時刻とのズレを計算して保持
+        const offset = data.serverTime ? data.serverTime - Date.now() : 0;
+        setServerTimeOffset(offset);
         
-        // もし既に時間が過ぎていたら完了状態にする
+        // 判定もサーバー時間基準（Date.now() + offset）で行うことでズレを吸収
         const nextTime = new Date(data.nextDrawTime).getTime();
-        if (nextTime <= Date.now()) {
+        if (nextTime <= Date.now() + offset) {
           setIsFinished(true);
         }
       } catch (err: any) {
@@ -196,6 +201,7 @@ export default function Home() {
                         targetTime={rouletteState.nextDrawTime}
                         reductionMinutes={0}
                         onFinished={() => setIsFinished(true)}
+                        serverTimeOffset={serverTimeOffset}
                       />
 
                       <div className="flex items-center">
