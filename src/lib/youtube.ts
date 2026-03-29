@@ -56,9 +56,16 @@ export async function fetchAudioBuffer(videoId: string): Promise<Buffer> {
   const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
   
   return new Promise((resolve, reject) => {
-    // Next.js環境での __dirname パス解決バグを回避するため、絶対パスで直接バイナリを指定する
+    // Next.js環境での __dirname パス解決バグを回避するため、まずローカルバイナリを探す
+    const fs = require('fs');
     const ext = os.platform() === 'win32' ? '.exe' : '';
-    const binaryPath = path.join(process.cwd(), 'node_modules', 'youtube-dl-exec', 'bin', `yt-dlp${ext}`);
+    let binaryPath = path.join(process.cwd(), 'node_modules', 'youtube-dl-exec', 'bin', `yt-dlp${ext}`);
+    
+    // GitHub ActionsなどでAPI制限回避のためバイナリダウンロードをスキップした場合、
+    // pipでインストールされたグローバルの yt-dlp を使用する
+    if (!fs.existsSync(binaryPath)) {
+      binaryPath = 'yt-dlp';
+    }
     
     // Geminiのネイティブ解析が 'audio/m4a' にのみ適切に反応するため、m4a (ACC) 形式を強制指定
     const child = spawn(binaryPath, [
