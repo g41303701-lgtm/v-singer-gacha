@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin as supabase } from '@/lib/supabase';
 
 // 実際はキャッシュさせず、POSTリクエストのたびに確実にデクリメント・データベース更新を行います
 export const dynamic = 'force-dynamic';
