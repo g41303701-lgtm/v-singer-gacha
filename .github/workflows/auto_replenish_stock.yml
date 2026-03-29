@@ -1,11 +1,8 @@
 name: Auto Replenish Vtuber Stock
 
 on:
-  schedule:
-    # 毎時0分に実行します（ストックが十分なときは数秒で即終了します）
-    - cron: '0 * * * *'
   workflow_dispatch:
-    # GitHub上のActionsタブから手動で実行可能
+    # GitHubのAPIを叩いて実行するか、UIから手動実行します
 
 jobs:
   replenish:
