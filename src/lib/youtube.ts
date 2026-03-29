@@ -67,56 +67,38 @@ export async function fetchAudioBuffer(videoId: string): Promise<Buffer> {
       binaryPath = 'yt-dlp';
     }
     
-    const tmpDir = os.tmpdir();
-    const outputPath = path.join(tmpDir, `yt_${videoId}_${Date.now()}.m4a`);
-
     const args = [
-      '-f', 'ba/b', // 最高音質ファイル、無ければ動画付き最高品質
-      '-x', '--audio-format', 'm4a', // 確実な抽出
-      '--extractor-args', 'youtube:player_client=android,ios', // Web版APIを完全に除外し、モバイルアプリ専用APIに限定することでデータセンターIPのBotテストを回避
-      '-o', outputPath
+      '-f', 'bestaudio[ext=m4a]/bestaudio/best', // 可能な限りm4a、無ければ最良のオーディオ
+      '-o', '-' // 標準出力へ直接流し込む（昨日の実績ある動作）
     ];
 
-    if (process.env.YOUTUBE_COOKIES_PATH) {
-      args.push('--cookies', process.env.YOUTUBE_COOKIES_PATH);
-    }
     args.push(videoUrl);
 
-    // stdoutへのパイプではなくファイル書き出しを行い、ログのみ取得する
     const child = spawn(binaryPath, args, {
       windowsHide: true,
-      stdio: ['ignore', 'pipe', 'pipe'], 
+      stdio: ['ignore', 'pipe', 'pipe'], // 標準出力と標準エラー出力を受け取る
     });
 
+    if (!child.stdout) {
+      return reject(new Error('Failed to initialize download stream for ' + videoId));
+    }
+
+    const chunks: Buffer[] = [];
+    child.stdout.on('data', (chunk) => {
+      chunks.push(Buffer.from(chunk));
+    });
+    
     let stderrOutput = '';
     child.stderr?.on('data', (chunk) => {
       stderrOutput += chunk.toString();
     });
     
-    // yt-dlp は -o でファイル指定するとエラー以外のログをstdoutに出力する
-    let stdoutLogs = '';
-    child.stdout?.on('data', (chunk) => {
-      stdoutLogs += chunk.toString();
-    });
-
     child.on('close', (code) => {
-      try {
-        if (code === 0 && fs.existsSync(outputPath)) {
-          const buffer = fs.readFileSync(outputPath);
-          resolve(buffer);
-        } else {
-          // エラーメッセージの抽出
-          const errMsg = stderrOutput.split('\n').filter(l => l.includes('ERROR:')).join(' ') 
-            || stderrOutput.trim() || stdoutLogs.trim() || 'Unknown extraction error';
-          reject(new Error(`Exit code ${code} for video ${videoId}. Reason: ${errMsg}`));
-        }
-      } catch (err) {
-        reject(err);
-      } finally {
-        // 一時ファイルのクリーンアップ
-        if (fs.existsSync(outputPath)) {
-          try { fs.unlinkSync(outputPath); } catch (_) {}
-        }
+      if (code === 0) {
+        resolve(Buffer.concat(chunks));
+      } else {
+        const errMsg = stderrOutput.split('\n').filter(l => l.includes('ERROR:')).join(' ') || stderrOutput.trim();
+        reject(new Error(`Exit code ${code} for video ${videoId}. Reason: ${errMsg}`));
       }
     });
     
