@@ -67,12 +67,18 @@ export async function fetchAudioBuffer(videoId: string): Promise<Buffer> {
       binaryPath = 'yt-dlp';
     }
     
+    const args = [
+      '-f', 'bestaudio[ext=m4a]/bestaudio',
+      '-o', '-'
+    ];
+
+    if (process.env.YOUTUBE_COOKIES_PATH) {
+      args.push('--cookies', process.env.YOUTUBE_COOKIES_PATH);
+    }
+    args.push(videoUrl);
+
     // Geminiのネイティブ解析が 'audio/m4a' にのみ適切に反応するため、m4a (ACC) 形式を強制指定
-    const child = spawn(binaryPath, [
-      '-f', 'bestaudio[ext=m4a]/bestaudio', // 可能な限りm4a、無ければ最良のオーディオ
-      '-o', '-',
-      videoUrl
-    ], {
+    const child = spawn(binaryPath, args, {
       windowsHide: true,
       stdio: ['ignore', 'pipe', 'pipe'], // 標準エラー出力も読み取る
     });
