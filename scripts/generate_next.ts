@@ -24,11 +24,31 @@ async function main() {
       process.exit(0);
     }
 
-    const result = await runAutoAnalysis();
-    console.log(`\n✅ Analysis finished successfully.`);
-    console.log(`📡 Result: ${result.name} - ${result.status}`);
-  } catch (error: any) {
-    console.error("\n❌ Analysis Script Error:", error.message);
+    let success = false;
+    let maxRetries = 5; // エラー時は最大5人の別候補でリトライ
+
+    for (let i = 1; i <= maxRetries; i++) {
+      try {
+        const result = await runAutoAnalysis();
+        console.log(`\n✅ Analysis finished successfully.`);
+        console.log(`📡 Result: ${result.name} - ${result.status}`);
+        success = true;
+        break; // 成功した場合はループ終了
+      } catch (error: any) {
+        console.error(`\n❌ Analysis Script Error (Attempt ${i}/${maxRetries}):`, error.message);
+        if (i === maxRetries) {
+          console.error("🚨 All retry attempts failed.");
+        } else {
+          console.log("♻️ Retrying with another candidate...");
+        }
+      }
+    }
+
+    if (!success) {
+      process.exit(1);
+    }
+  } catch (outerError: any) {
+    console.error("\n❌ Fatal Script Error:", outerError.message);
     process.exit(1);
   }
 }

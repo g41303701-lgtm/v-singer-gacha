@@ -94,25 +94,34 @@ export async function runAutoAnalysis(): Promise<{ name: string; status: string 
 
     for (const video of videoDataArray) {
       console.log(`  🎵 Analyzing: ${video.videoTitle}...`);
-      const audioBuffer = await fetchAudioBuffer(video.videoId);
-      const analysis = await generateAiIntroductionWithAudio(audioBuffer, video.videoTitle);
-      
-      const chorusStart = analysis.chorus_start;
-      const chorusEnd = analysis.chorus_end > chorusStart ? analysis.chorus_end : chorusStart + 15;
+      try {
+        const audioBuffer = await fetchAudioBuffer(video.videoId);
+        const analysis = await generateAiIntroductionWithAudio(audioBuffer, video.videoTitle);
+        
+        const chorusStart = analysis.chorus_start;
+        const chorusEnd = analysis.chorus_end > chorusStart ? analysis.chorus_end : chorusStart + 15;
 
-      medleySegments.push({
-        buffer: audioBuffer,
-        chorusStart,
-        chorusEnd
-      });
+        medleySegments.push({
+          buffer: audioBuffer,
+          chorusStart,
+          chorusEnd
+        });
 
-      medleyData.push({
-        videoId: video.videoId,
-        videoTitle: video.videoTitle,
-        chorusStart: chorusStart,
-        chorusEnd: chorusEnd,
-        voiceAnalysis: analysis.voice_analysis,
-      });
+        medleyData.push({
+          videoId: video.videoId,
+          videoTitle: video.videoTitle,
+          chorusStart: chorusStart,
+          chorusEnd: chorusEnd,
+          voiceAnalysis: analysis.voice_analysis,
+        });
+      } catch (videoErr: any) {
+        console.warn(`  ⚠️ Skipping video ${video.videoId} due to error: ${videoErr.message}`);
+        continue;
+      }
+    }
+
+    if (medleySegments.length === 0) {
+      throw new Error("All selected videos failed to analyze (DRM protection or block).");
     }
 
     // メドレー音声生成とアップロード
