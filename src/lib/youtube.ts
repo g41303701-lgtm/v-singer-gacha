@@ -71,7 +71,8 @@ export async function fetchAudioBuffer(videoId: string): Promise<Buffer> {
     const outputPath = path.join(tmpDir, `yt_${videoId}_${Date.now()}.m4a`);
 
     const args = [
-      '-x', '--audio-format', 'm4a', // 確実にm4aに抽出・変換して出力
+      '-f', 'b', // GitHub ActionsのデータセンターIPから分離ストリーム(DASH)がブロックされる場合があるため、確実に存在する事前結合ストリーム(best)を指定する
+      '-x', '--audio-format', 'm4a', // 抽出・変換
       '-o', outputPath
     ];
 
