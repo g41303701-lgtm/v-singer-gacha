@@ -21,8 +21,16 @@ jobs:
           node-version: 22
           cache: 'npm'
 
-      - name: Install dependencies
+      - name: Install system dependencies (ffmpeg, yt-dlp)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg python3-pip
+          pip install yt-dlp
+
+      - name: Install Node.js dependencies
         run: npm install --legacy-peer-deps
+        env:
+          YOUTUBE_DL_SKIP_DOWNLOAD: true
 
       - name: Run discovery
         run: npx tsx scripts/discover.ts
