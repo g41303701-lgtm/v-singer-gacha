@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin as supabase } from '@/lib/supabase';
 import { verifyAdminAuth } from '@/lib/auth';
+import { executePublishNextGacha } from '@/lib/publish-logic';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -14,47 +14,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 1. 最も古い未公開スタックを取得
-    const { data: queue, error: fetchError } = await supabase
-      .from('roulette_history')
-      .select('id, vtuber_id')
-      .eq('is_published', false)
-      .order('created_at', { ascending: true })
-      .limit(1);
+    const result = await executePublishNextGacha();
 
-    if (fetchError) throw fetchError;
-    if (!queue || queue.length === 0) {
-      return NextResponse.json({ 
-        success: false, 
-        message: 'No queued (unexposed) data found. Please run generate-next first.' 
-      }, { status: 404 });
+    if (!result.success) {
+      if (result.message.includes('No queued')) {
+        return NextResponse.json({ success: false, message: result.message }, { status: 404 });
+      }
+      throw new Error(result.message);
     }
-
-    const target = queue[0];
-
-    // 2. 公開状態 (is_published = true) に更新
-    const today = new Date().toISOString().split('T')[0];
-    const { error: updateError } = await supabase
-      .from('roulette_history')
-      .update({ 
-        is_published: true,
-        draw_date: today // 公開日を今日に設定
-      })
-      .eq('id', target.id);
-
-    if (updateError) throw updateError;
-
-    // 3. global_statsリセット (次の更新時間を24時間後に設定)
-    // 3. global_statsリセット (次の更新時間を24時間後に設定)
-    const nextDrawTime = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-    await supabase.from('global_stats')
-      .update({
-        next_draw_time: nextDrawTime,
-        time_reduction_minutes: 0 
-      })
-      .eq('id', 1);
-
-    console.log(`Successfully published entry ${target.id}.`);
 
     // 4. ストック補充フェーズ (Cloudflare Edge非対応のためスキップ)
     // 実際の補充は GitHub Actions (auto_replenish_stock.yml) が定期的または手動で行います
@@ -63,7 +30,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       message: `Entry published successfully. ${replenishmentLog}`,
-      id: target.id
+      id: result.id
     });
   } catch (error: any) {
     console.error('Publish Error:', error);

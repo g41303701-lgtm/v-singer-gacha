@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { mapVtuberRow } from '@/lib/mappers';
+import { executePublishNextGacha } from '@/lib/publish-logic';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,24 +16,17 @@ export async function GET(request: Request) {
 
     if (statsError) throw statsError;
 
-    // もし時間がゼロ（または過ぎている）なら、即座にpublishAPIを内部から叩く
+    // もし時間がゼロ（または過ぎている）なら、即座にpublishロジックを直接叩く
     if (Date.now() >= new Date(stats.next_draw_time).getTime()) {
-      console.log('⏰ current route: Time is up! Publishing instantly from access trigger.');
-      const origin = new URL(request.url).origin;
-      const publishRes = await fetch(`${origin}/api/admin/publish`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      console.log('⏰ current route: Time is up! Publishing instantly from backend logic.');
+      const publishRes = await executePublishNextGacha();
 
-      if (publishRes.ok) {
+      if (publishRes.success) {
         // パブリッシュに成功した場合、新しい時間が入った統計を再取得する
         const { data: newStats } = await supabase.from('global_stats').select('*').eq('id', 1).single();
         if (newStats) stats = newStats;
       } else {
-        console.error('Auto publish failed during access trigger:', await publishRes.text());
+        console.error('Auto publish failed during access trigger:', publishRes.message);
       }
     }
 

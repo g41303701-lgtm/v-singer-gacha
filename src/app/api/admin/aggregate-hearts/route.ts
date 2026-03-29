@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '@/lib/supabase';
 import { verifyAdminAuth } from '@/lib/auth';
+import { executePublishNextGacha } from '@/lib/publish-logic';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,21 +29,15 @@ export async function POST(request: Request) {
     const newNextDrawTime = currentNextTime - diff * 1000;
     let published = false;
 
-    // 時間が現在時刻を過ぎている（カウントダウン0）場合は、自動公開APIをたたく
+    // 時間が現在時刻を過ぎている（カウントダウン0）場合は、自動公開ロジックを直接叩く
     if (Date.now() >= newNextDrawTime) {
-      console.log('Time is up! Triggering automatic publish...');
-      const origin = new URL(request.url).origin;
-      const publishRes = await fetch(`${origin}/api/admin/publish`, {
-        method: 'POST',
-        headers: {
-          'Authorization': request.headers.get('authorization') || '',
-        }
-      });
+      console.log('Time is up! Triggering automatic publish from backend logic...');
+      const publishRes = await executePublishNextGacha();
       
-      if (publishRes.ok) {
+      if (publishRes.success) {
         published = true;
       } else {
-        console.error('Auto publish failed:', await publishRes.text());
+        console.error('Auto publish failed:', publishRes.message);
       }
     }
 
