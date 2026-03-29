@@ -71,8 +71,9 @@ export async function fetchAudioBuffer(videoId: string): Promise<Buffer> {
     const outputPath = path.join(tmpDir, `yt_${videoId}_${Date.now()}.m4a`);
 
     const args = [
-      '-f', 'b', // GitHub ActionsのデータセンターIPから分離ストリーム(DASH)がブロックされる場合があるため、確実に存在する事前結合ストリーム(best)を指定する
-      '-x', '--audio-format', 'm4a', // 抽出・変換
+      '-f', 'ba/b', // 最高音質ファイル、無ければ動画付き最高品質
+      '-x', '--audio-format', 'm4a', // 確実な抽出
+      '--extractor-args', 'youtube:player_client=android,ios', // Web版APIを完全に除外し、モバイルアプリ専用APIに限定することでデータセンターIPのBotテストを回避
       '-o', outputPath
     ];
 
