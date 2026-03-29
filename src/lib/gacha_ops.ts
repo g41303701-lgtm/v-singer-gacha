@@ -82,17 +82,33 @@ export async function runAutoAnalysis(): Promise<{ name: string; status: string 
 
   try {
     // 3. 解析フェーズ
-    let videoDataArray = [];
+    const maxTargetVideos = 3;
+    let videoDataArray: any[] = [];
+
+    let primaryVideos = [];
     if (target.discovery_video_ids && Array.isArray(target.discovery_video_ids)) {
-      videoDataArray = target.discovery_video_ids;
-    } else {
-      videoDataArray = await fetchLatestMusicVideos(target.channel_id, 3);
+      primaryVideos = target.discovery_video_ids;
+    }
+
+    // 予備として、チャンネルから最新の歌動画を15件取得する
+    const fallbackVideos = await fetchLatestMusicVideos(target.channel_id, 15);
+
+    const seenIds = new Set();
+    for (const v of [...primaryVideos, ...fallbackVideos]) {
+      if (!seenIds.has(v.videoId)) {
+        seenIds.add(v.videoId);
+        videoDataArray.push(v);
+      }
     }
     
     const medleyData: MedleySong[] = [];
-    const medleySegments = [];
+    const medleySegments: any[] = [];
 
     for (const video of videoDataArray) {
+      if (medleySegments.length >= maxTargetVideos) {
+        break; // 目標数（3曲）に達したら探索終了
+      }
+
       console.log(`  🎵 Analyzing: ${video.videoTitle}...`);
       try {
         const audioBuffer = await fetchAudioBuffer(video.videoId);
@@ -116,12 +132,12 @@ export async function runAutoAnalysis(): Promise<{ name: string; status: string 
         });
       } catch (videoErr: any) {
         console.warn(`  ⚠️ Skipping video ${video.videoId} due to error: ${videoErr.message}`);
-        continue;
+        continue; // エラー時は次の動画を探索
       }
     }
 
-    if (medleySegments.length === 0) {
-      throw new Error("All selected videos failed to analyze (DRM protection or block).");
+    if (medleySegments.length < maxTargetVideos) {
+      throw new Error(`Failed to collect ${maxTargetVideos} valid videos for this VTuber (Found only ${medleySegments.length}). Proceeding to next candidate.`);
     }
 
     // メドレー音声生成とアップロード
